@@ -3,25 +3,25 @@ package org.powertac.wpgenco;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.powertac.common.config.ConfigurableInstance;
+import org.powertac.common.config.ConfigurableValue;
+import org.powertac.common.state.Domain;
+
 /**
  * This class represents the windfarm efficiency curve
  * @author Shashank Pande
  *
  */
+@Domain
+@ConfigurableInstance
 public class WindFarmEfficiencyCurve {
 	
-	public static class WindSpeedband {
+	private static class WindSpeedband {
 		private double fromWindSpeed = 0;
 		private double toWindSpeed = 0;
 		public WindSpeedband(double fromSpeed, double toSpeed) {
 			this.fromWindSpeed = fromSpeed;
 			this.toWindSpeed = toSpeed;
-		}
-		public double getFromWindSpeed() {
-			return this.fromWindSpeed;
-		}
-		public double getToWindSpeed() {
-			return this.toWindSpeed;
 		}
 		public boolean isWithinSpeedband(double windSpeed) {
 			if ((windSpeed >= fromWindSpeed) && (windSpeed < toWindSpeed)) {
@@ -32,27 +32,46 @@ public class WindFarmEfficiencyCurve {
 		}
 	} //static class WindSpeedband
 	
-	/** This map should be populated from database values */
+	/** Configured values to be read as List of Strings */
+	@ConfigurableValue(valueType = "List", description = "wind speed bands")
+	private List<String> cfgWindSpeedbands = null;
+	@ConfigurableValue(valueType = "List", description = "value of slope in a linear equation")
+	private List<String> cfgSlope          = null;
+	@ConfigurableValue(valueType = "List", description = "value of y intercept in a linear equation")
+	private List<String> cfgYIntercept     = null;
+	
+	/** This map should be populated from configured values */
 	private List<WindSpeedband> windSpeedbands = new ArrayList<WindSpeedband>();
 	private List<Double>        slope          = new ArrayList<Double>();
 	private List<Double>        yIntercept     = new ArrayList<Double>();
 	
+	/**
+	 * Constructor
+	 */
 	public WindFarmEfficiencyCurve() {
-		// write code here to populate the mapWindSpeedToEfficiency
-		double[] from = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-		double[] to   = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
-		double[] m    = {0.112704918, 0.048960386, 0.022516468, 0.01184951, 0.012746067, 
-				         0.007222986, -0.029581606, -0.068315931, -0.068956675, -0.055775751};
-		double[] b    = {-0.215582134, 0.103140528, 0.261804034, 0.33647274, 0.329300284,
-				          0.379008009, 0.747053936, 1.173131512, 1.180820432, 1.009468425};
-		for (int i = 0; i < from.length; i++) {
-			WindSpeedband wspb = new WindSpeedband(from[i], to[i]);
-			windSpeedbands.add(wspb);
-			slope.add(m[i]);
-			yIntercept.add(b[i]);
-		} //for i..
+		initialize();		
 	} //WindFarmEfficiencyCurve()
 	
+	private void initialize() {
+		
+		// write code here to populate the mapWindSpeedToEfficiency
+		for (int i = 0; i < cfgWindSpeedbands.size(); i++) {
+			String from_to = cfgWindSpeedbands.get(i);
+			String[] fromtoarray = from_to.split("-");
+			WindSpeedband wspb = new WindSpeedband(Double.valueOf(fromtoarray[0]), Double.valueOf(fromtoarray[1]));
+			this.windSpeedbands.add(wspb);
+			
+			this.slope.add(Double.valueOf(cfgSlope.get(i)));
+			this.yIntercept.add(Double.valueOf(cfgYIntercept.get(i)));
+			
+		}		
+	}
+	
+	/**
+	 * get efficiency for given wind speed in m/sec
+	 * @param windSpeed wind speed in m/sec
+	 * @return efficiency
+	 */
 	public double getEfficiency(double windSpeed) {
 		int indexInList = -1;
 		for (int i = 0; i < windSpeedbands.size(); i++) {
@@ -68,6 +87,6 @@ public class WindFarmEfficiencyCurve {
 		} else {
 			return 0;
 		}
-	}
+	} //get efficiency
 
 } //class WindFarmEfficiencyCurve
