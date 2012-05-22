@@ -26,7 +26,6 @@ import org.powertac.common.Timeslot;
 import org.powertac.common.config.ConfigurableInstance;
 import org.powertac.common.config.ConfigurableValue;
 import org.powertac.common.interfaces.BrokerProxy;
-import org.powertac.common.repo.RandomSeedRepo;
 import org.powertac.common.state.Domain;
 import org.powertac.common.state.StateChange;
 
@@ -91,7 +90,7 @@ public class WindfarmGenco extends Broker {
 	 * @param proxy
 	 * @param randomSeedRepo
 	 */
-	public void init(BrokerProxy proxy, RandomSeedRepo randomSeedRepo) {
+	public void init(BrokerProxy proxy) {
 		log.info("init " + getUsername());
 		this.brokerProxyService = proxy;
 	}
