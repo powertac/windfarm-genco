@@ -15,6 +15,7 @@
  */
 package org.powertac.wpgenco;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
 import org.joda.time.Instant;
@@ -22,6 +23,7 @@ import org.joda.time.Instant;
 import org.powertac.common.Broker;
 import org.powertac.common.Competition;
 import org.powertac.common.IdGenerator;
+import org.powertac.common.Order;
 import org.powertac.common.Timeslot;
 import org.powertac.common.config.ConfigurableInstance;
 import org.powertac.common.config.ConfigurableValue;
@@ -55,8 +57,13 @@ public class WindfarmGenco extends Broker {
 	private double carbonEmissionRate = 0.0;
 
 	protected BrokerProxy brokerProxyService;
+	
+	private WindForecast windForecast = new WindForecast();
+	private ForecastScenarios forecastScenarios = null;
 
 	// configured parameters
+	@ConfigurableValue(valueType = "String", description = "Location of weather data to be reported")
+	private String location = "minneapolis";	
 	@ConfigurableValue(valueType = "Integer", description="Number of turbines in the wind farm")
 	private int numberOfTurbines = 100;
 	@ConfigurableValue(valueType = "Double", description="Capacity of each turbine in MW")
@@ -93,6 +100,7 @@ public class WindfarmGenco extends Broker {
 	public void init(BrokerProxy proxy) {
 		log.info("init " + getUsername());
 		this.brokerProxyService = proxy;
+		forecastScenarios = new ForecastScenarios(this);
 	}
 
 	/**
@@ -140,6 +148,14 @@ public class WindfarmGenco extends Broker {
 		return askPrice;
 	}
 	
+	public WindForecast getWindForecast() {
+		return this.windForecast;
+	}
+	
+	public String getLocation() {
+		return location;
+	}
+	
 	/**
 	 * Generates Orders in the market to sell available capacity. No Orders are
 	 * submitted if the plant is not in operation.
@@ -149,16 +165,38 @@ public class WindfarmGenco extends Broker {
 			log.info("not in operation - no orders");
 			return;
 		}
+		if (openSlots.isEmpty()) {
+			return;
+		}
 		// 1. get forecast error scenarios
+		// this is done only once when forecastScenarios is instantiated
+		
 		// 2. get wind speed forecast
+		Timeslot firstTimeslot = openSlots.get(0);
+		windForecast.refreshWeatherForecast();
+		
 		// 3. generate wind speed scenarios (wind forecast + forecast error)
+		forecastScenarios.calcWindSpeedForecastScenarios();
+		
 		// 4. generate power output scenarios
+		forecastScenarios.calcPowerOutputScenarios();
+		
 		// 5. run optimization to determine bid quantity for all timeslots
-		log.info("Generate orders for " + getUsername());
-		int skip = (0 - Competition.currentCompetition()
-				.getDeactivateTimeslotsAhead());
-		if (skip < 0)
-			skip = 0;
+		List<Double> askQuantities = calcOptimalAskQuantities(forecastScenarios.getWindPowerOutputScenarios());
+		
+		//6. generate orders - assume that we have 24 timeslots open
+		for (int i = 0; i < openSlots.size(); i++) {
+			Timeslot slot = openSlots.get(i);
+			double askQuantity = askQuantities.get(i);
+			Order offer = new Order(this, slot, 0, askPrice); 
+			
+		}
+		
+//		log.info("Generate orders for " + getUsername());
+//		int skip = (0 - Competition.currentCompetition()
+//				.getDeactivateTimeslotsAhead());
+//		if (skip < 0)
+//			skip = 0;
 		// for (Timeslot slot : openSlots) {
 		// double availableCapacity = currentCapacity;
 		// // do we receive these?
@@ -180,6 +218,10 @@ public class WindfarmGenco extends Broker {
 		// }
 
 	} // generateOrders()
+	
+	private List<Double> calcOptimalAskQuantities(List<ForecastScenarios.Scenario> powerOutputScenarios) {
+		return new ArrayList<Double>();
+	}
 
 	@StateChange
 	private void setInOperation(boolean op) {
@@ -195,7 +237,7 @@ public class WindfarmGenco extends Broker {
 	 *            air density in kg/m^3
 	 * @return estimated power output in MW
 	 */
-	private double getEstimatedPowerOutput(double windSpeed, double airDensity) {
+	public double getEstimatedPowerOutput(double windSpeed, double airDensity) {
 		if (windSpeed < cutInSpeed) {
 			return 0;
 		} else if ((windSpeed >= maxPowerOutputspeed)
@@ -221,7 +263,7 @@ public class WindfarmGenco extends Broker {
 	 *            temperature in centigrade
 	 * @return air density in kg/m^3
 	 */
-	private static double getDryAirDensity(double airPressure,
+	public static double getDryAirDensity(double airPressure,
 			double tempInCentigrade) {
 		double T = tempInCentigrade + 273.15; // temp in deg Kelvin
 		double R = 287.05; // Specific gas constant for dry air J/kg.K

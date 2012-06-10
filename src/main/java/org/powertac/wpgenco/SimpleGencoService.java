@@ -93,15 +93,10 @@ public class SimpleGencoService
     for (Object gencoObj : serverConfig.configureInstances(WindfarmGenco.class)) {
       WindfarmGenco windfarmGenco = (WindfarmGenco)gencoObj;
       brokerRepo.add(windfarmGenco);
-      windfarmGenco.init(brokerProxyService, randomSeedRepo);
+      windfarmGenco.init(brokerProxyService);
       windfarmGencos.add(windfarmGenco);
     }
-    // configure the buyer
-//    Buyer buyer = new Buyer("buyer");
-//    serverConfig.configureMe(buyer);
-//    brokerRepo.add(buyer);
-//    windfarmGencos.add(buyer);
-//    buyer.init(brokerProxyService, randomSeedRepo);
+
     return "WindfarmGenco";
   }
 
