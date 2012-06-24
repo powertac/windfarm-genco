@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.joda.time.Instant;
 
 import org.powertac.common.Broker;
-import org.powertac.common.Competition;
 import org.powertac.common.IdGenerator;
 import org.powertac.common.Order;
 import org.powertac.common.Timeslot;
@@ -172,7 +171,6 @@ public class WindfarmGenco extends Broker {
 		// this is done only once when forecastScenarios is instantiated
 		
 		// 2. get wind speed forecast
-		Timeslot firstTimeslot = openSlots.get(0);
 		windForecast.refreshWeatherForecast();
 		
 		// 3. generate wind speed scenarios (wind forecast + forecast error)
@@ -188,34 +186,9 @@ public class WindfarmGenco extends Broker {
 		for (int i = 0; i < openSlots.size(); i++) {
 			Timeslot slot = openSlots.get(i);
 			double askQuantity = askQuantities.get(i);
-			Order offer = new Order(this, slot, 0, askPrice); 
-			
+			Order offer = new Order(this, slot, -askQuantity, askPrice); 
+			brokerProxyService.routeMessage(offer);
 		}
-		
-//		log.info("Generate orders for " + getUsername());
-//		int skip = (0 - Competition.currentCompetition()
-//				.getDeactivateTimeslotsAhead());
-//		if (skip < 0)
-//			skip = 0;
-		// for (Timeslot slot : openSlots) {
-		// double availableCapacity = currentCapacity;
-		// // do we receive these?
-		// MarketPosition posn = findMarketPositionByTimeslot(slot);
-		// if (skip-- > 0 && (posn == null || posn.getOverallBalance() == 0.0))
-		// continue;
-		// if (posn != null) {
-		// // posn.overallBalance is negative if we have sold power in this
-		// // slot
-		// availableCapacity += posn.getOverallBalance();
-		// }
-		// if (availableCapacity > 0.0) {
-		// // make an offer to sell
-		// Order offer = new Order(this, slot, -availableCapacity, askPrice);
-		// log.debug(getUsername() + " offers " + availableCapacity
-		// + " in " + slot.getSerialNumber() + " for " + askPrice);
-		// brokerProxyService.routeMessage(offer);
-		// }
-		// }
 
 	} // generateOrders()
 	
@@ -223,6 +196,7 @@ public class WindfarmGenco extends Broker {
 		return new ArrayList<Double>();
 	}
 
+	@SuppressWarnings("unused")
 	@StateChange
 	private void setInOperation(boolean op) {
 		inOperation = op;
@@ -232,7 +206,7 @@ public class WindfarmGenco extends Broker {
 	 * Estimate power output from given wind speed and air density
 	 * 
 	 * @param windSpeed
-	 *            sind speed in m/sec
+	 *            wind speed in m/sec
 	 * @param airDensity
 	 *            air density in kg/m^3
 	 * @return estimated power output in MW

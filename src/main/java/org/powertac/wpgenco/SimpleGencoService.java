@@ -30,7 +30,7 @@ import org.powertac.common.interfaces.InitializationService;
 import org.powertac.common.interfaces.ServerConfiguration;
 import org.powertac.common.interfaces.TimeslotPhaseProcessor;
 import org.powertac.common.repo.BrokerRepo;
-import org.powertac.common.repo.RandomSeedRepo;
+//import org.powertac.common.repo.RandomSeedRepo;
 import org.powertac.common.repo.TimeslotRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -62,8 +62,8 @@ public class SimpleGencoService
   @Autowired
   private BrokerProxy brokerProxyService;
   
-  @Autowired
-  private RandomSeedRepo randomSeedRepo;
+ // @Autowired
+//  private RandomSeedRepo randomSeedRepo;
 
   private List<WindfarmGenco> windfarmGencos;
   
