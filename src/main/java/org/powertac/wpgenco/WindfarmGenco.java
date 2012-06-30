@@ -169,6 +169,7 @@ public class WindfarmGenco extends Broker {
 		}
 		// 1. get forecast error scenarios
 		// this is done only once when forecastScenarios is instantiated
+		// this happens in the init() function above.
 		
 		// 2. get wind speed forecast
 		windForecast.refreshWeatherForecast();
