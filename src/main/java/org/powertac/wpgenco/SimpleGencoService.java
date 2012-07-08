@@ -15,7 +15,7 @@
  */
 
 package org.powertac.wpgenco;
- 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,35 +38,36 @@ import org.springframework.stereotype.Service;
 /**
  * Very simple service that operates wholesale market actors, activated by the
  * {@link org.powertac.server.CompetitionControlService} once each timeslot.
+ * 
  * @author John Collins
  */
 @Service
-public class SimpleGencoService
-  extends TimeslotPhaseProcessor
+public class SimpleGencoService extends TimeslotPhaseProcessor
   implements InitializationService
 {
-  static private Logger log = Logger.getLogger(SimpleGencoService.class.getName());
+  static private Logger log = Logger.getLogger(SimpleGencoService.class
+          .getName());
 
   @Autowired
   private TimeService timeService;
-  
+
   @Autowired
   private TimeslotRepo timeslotRepo;
-  
+
   @Autowired
   private ServerConfiguration serverConfig;
-  
+
   @Autowired
   private BrokerRepo brokerRepo;
-  
+
   @Autowired
   private BrokerProxy brokerProxyService;
-  
- // @Autowired
-//  private RandomSeedRepo randomSeedRepo;
+
+  // @Autowired
+  // private RandomSeedRepo randomSeedRepo;
 
   private List<WindfarmGenco> windfarmGencos;
-  
+
   /**
    * Default constructor
    */
@@ -82,16 +83,18 @@ public class SimpleGencoService
   }
 
   /**
-   * Creates the windfarmGencos and the buyer using the server configuration service.
+   * Creates the windfarmGencos and the buyer using the server configuration
+   * service.
    */
   @Override
-  public String initialize (Competition competition, List<String> completedInits)
+  public String
+    initialize (Competition competition, List<String> completedInits)
   {
     super.init();
     // create the genco list
     windfarmGencos = new ArrayList<WindfarmGenco>();
-    for (Object gencoObj : serverConfig.configureInstances(WindfarmGenco.class)) {
-      WindfarmGenco windfarmGenco = (WindfarmGenco)gencoObj;
+    for (Object gencoObj: serverConfig.configureInstances(WindfarmGenco.class)) {
+      WindfarmGenco windfarmGenco = (WindfarmGenco) gencoObj;
       brokerRepo.add(windfarmGenco);
       windfarmGenco.init(brokerProxyService);
       windfarmGencos.add(windfarmGenco);
@@ -104,7 +107,7 @@ public class SimpleGencoService
    * Simply receives and stores the list of genco and buyer instances generated
    * by the initialization service.
    */
-  public void init(List<WindfarmGenco> windfarmGencos)
+  public void init (List<WindfarmGenco> windfarmGencos)
   {
     this.windfarmGencos = windfarmGencos;
   }
@@ -113,12 +116,13 @@ public class SimpleGencoService
    * Called once/timeslot, simply calls updateModel() and generateOrders() on
    * each of the windfarmGencos.
    */
-  public void activate(Instant now, int phase)
+  @Override
+  public void activate (Instant now, int phase)
   {
     log.info("Activate");
     List<Timeslot> openSlots = timeslotRepo.enabledTimeslots();
     Instant when = timeService.getCurrentTime();
-    for (WindfarmGenco windfarmGenco : windfarmGencos) {
+    for (WindfarmGenco windfarmGenco: windfarmGencos) {
       windfarmGenco.updateModel(when);
       windfarmGenco.generateOrders(when, openSlots);
     }
