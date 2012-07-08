@@ -79,7 +79,7 @@ public class GencoTests
                                     anyString())).thenReturn(seed);
     timeslotRepo = new TimeslotRepo();
     windfarmGenco = new WindfarmGenco("Test");
-    windfarmGenco.init(mockProxy, mockSeedRepo);
+    windfarmGenco.init(mockProxy);
     start = new DateTime(2011, 1, 1, 12, 0, 0, 0, DateTimeZone.UTC).toInstant();
 
     // Set up serverProperties mock
