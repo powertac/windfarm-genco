@@ -29,6 +29,7 @@ import org.powertac.common.config.ConfigurableValue;
 import org.powertac.common.interfaces.BrokerProxy;
 import org.powertac.common.state.Domain;
 import org.powertac.common.state.StateChange;
+import org.powertac.wpgenco.ForecastScenarios.Scenario;
 
 /**
  * Represents a producer of power in the transmission domain. Individual models
@@ -192,8 +193,7 @@ public class WindfarmGenco extends Broker
     forecastScenarios.calcPowerOutputScenarios();
 
     // 5. run optimization to determine bid quantity for all timeslots
-    List<Double> askQuantities =
-      calcOptimalAskQuantities(forecastScenarios.getWindPowerOutputScenarios());
+    List<Double> askQuantities = calcAskQuantities(openSlots);
 
     // 6. generate orders - assume that we have 24 timeslots open
     for (int i = 0; i < openSlots.size(); i++) {
@@ -205,11 +205,17 @@ public class WindfarmGenco extends Broker
 
   } // generateOrders()
 
-  private
-    List<Double>
-    calcOptimalAskQuantities (List<ForecastScenarios.Scenario> powerOutputScenarios)
+  private List<Double> calcAskQuantities (List<Timeslot> openSlots)
   {
-    return new ArrayList<Double>();
+    // instantiate a calculator
+    double maxCap = this.getNominalCapacity();
+    List<Scenario> wpScenarios =
+      forecastScenarios.getWindPowerOutputScenarios();
+    WindFarmOfferCalculator offerCalc =
+      new WindFarmOfferCalculator(maxCap, wpScenarios);
+    List<Double> optimalOffers = offerCalc.getOptimalOfferCapacities(openSlots);
+    // TODO: calculate actual capacity to offer from earlier submitted asks
+    return optimalOffers;
   }
 
   @SuppressWarnings("unused")

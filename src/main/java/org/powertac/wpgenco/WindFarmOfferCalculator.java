@@ -70,6 +70,18 @@ public class WindFarmOfferCalculator
     addPrices(mapTimeSlotMaxAskPrices, prices);
   }
 
+  public List<Double> getOptimalOfferCapacities (List<Timeslot> openSlots)
+  {
+    List<Double> offerCaps = new ArrayList<Double>();
+
+    for (Timeslot ts: openSlots) {
+      double oc = determineOfferCapacity(ts);
+      offerCaps.add(oc);
+    }
+
+    return offerCaps;
+  }
+
   private void addPrices (Map<Timeslot, Double> mapPriceStore, double[] prices)
   {
     // sanity check
