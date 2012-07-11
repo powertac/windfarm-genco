@@ -22,6 +22,7 @@ import org.joda.time.Instant;
 
 import org.powertac.common.Broker;
 import org.powertac.common.IdGenerator;
+import org.powertac.common.MarketPosition;
 import org.powertac.common.Order;
 import org.powertac.common.Timeslot;
 import org.powertac.common.config.ConfigurableInstance;
@@ -214,8 +215,21 @@ public class WindfarmGenco extends Broker
     WindFarmOfferCalculator offerCalc =
       new WindFarmOfferCalculator(maxCap, wpScenarios);
     List<Double> optimalOffers = offerCalc.getOptimalOfferCapacities(openSlots);
-    // TODO: calculate actual capacity to offer from earlier submitted asks
-    return optimalOffers;
+    List<Double> askQuantities = new ArrayList<Double>();
+    for (int i = 0; i < openSlots.size(); i++) 
+    {
+      Timeslot slot = openSlots.get(i);
+      double desiredOffer = optimalOffers.get(i);
+      MarketPosition posn = findMarketPositionByTimeslot(slot);
+      double clearedCapacity =  0 ;
+      if (posn != null)
+      {
+        clearedCapacity = posn.getOverallBalance(); //-ve for asks
+      }
+      desiredOffer += clearedCapacity;
+      askQuantities.add(desiredOffer);
+    }
+    return askQuantities;
   }
 
   @SuppressWarnings("unused")
