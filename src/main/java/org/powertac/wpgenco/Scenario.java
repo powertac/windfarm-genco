@@ -17,8 +17,13 @@
 package org.powertac.wpgenco;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
+import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 /**
  * This class represents a scenario.
@@ -28,11 +33,58 @@ import java.util.Map;
  * @author spande00 (Shashank Pande)
  * 
  */
+@XStreamAlias("Scenario")
 public class Scenario implements Comparable<Scenario>
 {
+  @XStreamAlias("Value")
+  public static class ScenarioValue implements Comparable<ScenarioValue>
+  {
+    @XStreamAlias("hour")
+    @XStreamAsAttribute
+    private int hour = 0;
+    @XStreamAlias("error")
+    @XStreamAsAttribute
+    private double error = 0;
+
+    public ScenarioValue (int hr, double err)
+    {
+      this.hour = hr;
+      this.error = err;
+    }
+
+    public int getHour ()
+    {
+      return this.hour;
+    }
+
+    public double getError ()
+    {
+      return this.error;
+    }
+
+    @Override
+    public int compareTo (ScenarioValue sv)
+    {
+      if (this.hour < sv.getHour()) {
+        return -1;
+      }
+      else if (this.hour > sv.getHour()) {
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+  }
+
+  @XStreamAlias("number")
+  @XStreamAsAttribute
   private int scenarioNumber = 0;
+  @XStreamAlias("probability")
+  @XStreamAsAttribute
   private double probability = 0.0;
-  private Map<Integer, Double> values = new HashMap<Integer, Double>();
+  @XStreamImplicit
+  private SortedSet<ScenarioValue> values = new TreeSet<ScenarioValue>();
 
   public Scenario (final int number, final double prob)
   {
@@ -50,15 +102,15 @@ public class Scenario implements Comparable<Scenario>
     return this.probability;
   }
 
-  public Map<Integer, Double> getValues ()
+  public Set<ScenarioValue> getValues ()
   {
-    return Collections.unmodifiableMap(this.values);
+    return Collections.unmodifiableSortedSet(this.values);
   }
 
-  public void addValue (int hour, double value)
+  public void addValue (ScenarioValue sv)
   {
-    if (hour > 0) {
-      values.put(hour, value);
+    if ((sv != null) && (sv.getHour() > 0)) {
+      values.add(sv);
     }
   }
 
@@ -83,4 +135,5 @@ public class Scenario implements Comparable<Scenario>
     }
     return false;
   }
+
 }

@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.joda.time.Instant;
-import org.powertac.wpgenco.ForecastScenarios.Scenario;
 import org.powertac.common.Timeslot;
 import org.powertac.common.repo.TimeslotRepo;
 import org.springframework.beans.factory.annotation.Autowired;

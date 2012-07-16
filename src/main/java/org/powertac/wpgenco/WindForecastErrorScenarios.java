@@ -16,11 +16,20 @@
 
 package org.powertac.wpgenco;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.powertac.common.config.ConfigurableInstance;
+import org.powertac.common.config.ConfigurableValue;
+
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 /**
  * This class represents wind speed forecast error scenarios.
@@ -28,12 +37,19 @@ import java.util.TreeSet;
  * @author spande00 (Shashank Pande)
  * 
  */
+@ConfigurableInstance
+@XStreamAlias("WindForecastErrorScenarios")
 public class WindForecastErrorScenarios
 {
+  // configured attribute
+  // configured parameters
+  @ConfigurableValue(valueType = "String", description = "path/name for the wind speed forecast scenarios file name")
+  private String errorScenarioDataFile;
+  @XStreamImplicit
   private SortedSet<Scenario> windSpeedForecastErrorScenarios =
     new TreeSet<Scenario>();
 
-  public WindForecastErrorScenarios ()
+  protected WindForecastErrorScenarios ()
   {
 
   }
@@ -56,5 +72,43 @@ public class WindForecastErrorScenarios
   public Set<Scenario> getScenarios ()
   {
     return Collections.unmodifiableSortedSet(windSpeedForecastErrorScenarios);
+  }
+  
+  public static void main(String[] args) {
+    WindForecastErrorScenarios wsperrScenarios = new WindForecastErrorScenarios();
+    for (int i = 0; i < 5; i++) { //create 6 scenarios for testing
+      double prob = Math.random();
+      int scNum = i+1; //scenario number
+      Scenario scenario = new Scenario(scNum, prob);
+      //add values to scenario
+      for (int j = 0; j < 24; j++) {
+        int hour = j + 1;
+        double error = Math.random() * 100;
+        scenario.addValue(new Scenario.ScenarioValue(hour, error));
+      }
+      wsperrScenarios.addScenario(scenario);
+    }
+    //create XML
+    XStream xstream = new XStream();
+    xstream.alias("Scenario", Scenario.class);
+    xstream.alias("WindForecastErrorScenarios", WindForecastErrorScenarios.class);
+    xstream.alias("Value", Scenario.ScenarioValue.class);
+    xstream.addImplicitCollection(WindForecastErrorScenarios.class, "windSpeedForecastErrorScenarios");
+    xstream.addImplicitCollection(Scenario.class, "values");
+    xstream.useAttributeFor(Scenario.class, "scenarioNumber");
+    xstream.aliasField("id", Scenario.class, "scenarioNumber");
+    xstream.useAttributeFor(Scenario.class, "probability");
+    xstream.useAttributeFor(Scenario.ScenarioValue.class, "hour");
+    xstream.useAttributeFor(Scenario.ScenarioValue.class, "error");
+    String xmlStr = xstream.toXML(wsperrScenarios);
+    try {
+      FileWriter fw = new FileWriter("C:/microgrid/xstreamExample.xml");
+      fw.write(xmlStr);
+      fw.write("\n");
+      fw.close();
+    } catch (IOException ex) {
+      System.out.println("IO ERROR");
+    }
+    
   }
 }

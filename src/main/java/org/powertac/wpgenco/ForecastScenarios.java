@@ -44,56 +44,15 @@ public class ForecastScenarios
 
   private static Logger log = Logger.getLogger(ForecastScenarios.class);
 
-  public static class Scenario
-  {
-    private double probability = 0.0;
-    private List<Double> values = new ArrayList<Double>();
-
-    public Scenario (final double prob, final List<Double> vals)
-    {
-      this.probability = prob;
-      this.values = vals;
-    }
-
-    public double getProbability ()
-    {
-      return this.probability;
-    }
-
-    public List<Double> getValues ()
-    {
-      return this.values;
-    }
-  }
-
   /*
    * Condifured attributes
    */
   @ConfigurableValue(valueType = "String", description = "location of forecast")
   String location;
 
-  @ConfigurableValue(valueType = "String", description = "database vendor")
-  String dbms;
-
-  @ConfigurableValue(valueType = "String", description = "database host name")
-  String dbHostName;
-
-  @ConfigurableValue(valueType = "Integer", description = "port number")
-  Integer port;
-
-  @ConfigurableValue(valueType = "String", description = "database name")
-  String dbName;
-
-  @ConfigurableValue(valueType = "String", description = "database user name")
-  String dbUserName;
-
-  @ConfigurableValue(valueType = "String", description = "database user password")
-  String dbUserPassword;
-
   // member variables
   private final WindfarmGenco windfarmGenco;
-  private final List<Scenario> windSpeedForecastErrorScenarios =
-    new ArrayList<Scenario>();
+  private final WindForecastErrorScenarios windspeedErrorScenarios = null;
   private final List<Scenario> windSpeedForecastScenarios =
     new ArrayList<Scenario>();
   private final List<Scenario> windFarmPowerOutputScenarios =
@@ -102,64 +61,14 @@ public class ForecastScenarios
   public ForecastScenarios (final WindfarmGenco ref)
   {
     this.windfarmGenco = ref;
-    readWindForecastErrorScenarios();
   }
 
-  /**
-   * Read wind forecast error scenarios.
-   * populate list windSpeedForecastErrorScenarios
-   */
-  private void readWindForecastErrorScenarios ()
-  {
-    // connect to the database
-    final Connection conn = getDbConnection();
-    if (conn == null) {
-      log.error("failed to read the wind forecast error scenarios");
-      return;
-    }
-    final String query =
-      "select SCENARIO_NUMBER, PROBABILITY, ERROR_VALUE from "
-              + "WIND_SPEED_FORECAST_ERROR_SCENARIOS WHERE LOCATION = "
-              + this.location + " ORDER BY SCENARIO_NUMBER, HOUR";
-    Statement stmt = null;
-    final Map<Integer, Scenario> scenarioMap = new HashMap<Integer, Scenario>();
-    ResultSet rs = null;
-    try {
-      stmt = conn.createStatement();
-      rs = stmt.executeQuery(query);
-      while (rs.next()) {
-        final int scenario_num = rs.getInt("SCENARIO_NUMBER");
-        final double probability = rs.getDouble("PROBABILITY");
-        final double errorVal = rs.getDouble("ERROR_VALUE");
-        Scenario errorScenario = scenarioMap.get(scenario_num);
-        if (errorScenario == null) {
-          final List<Double> vals = new ArrayList<Double>();
-          vals.add(errorVal);
-          errorScenario = new Scenario(probability, vals);
-          scenarioMap.put(scenario_num, errorScenario);
-        }
-        else {
-          final List<Double> vals = errorScenario.getValues();
-          vals.add(errorVal);
-        }
-      } // for each row
-      if (scenarioMap.size() > 0) {
-        populateWindSpeedErrorScenarios(scenarioMap);
-      }
-      else {
-        log.error("no windspeed error scenarios found");
-      }
-    }
-    catch (final SQLException ex) {
-      log.error("Error reading wind speed error scenarios from database", ex);
-    }
-  } // readWindForecastErrorScenarios()
 
   private void
     populateWindSpeedErrorScenarios (final Map<Integer, Scenario> scenarioMap)
   {
     if (scenarioMap.size() > 0) {
-      this.windSpeedForecastErrorScenarios.clear();
+      // TODO: this.windSpeedForecastErrorScenarios.clear();
     }
     else {
       return;
@@ -168,29 +77,8 @@ public class ForecastScenarios
     final List<Scenario> scenarioList =
       new ArrayList<Scenario>(scenarioMap.values());
     for (final Scenario errorScenario: scenarioList) {
-      windSpeedForecastErrorScenarios.add(errorScenario);
+      // TODO: windSpeedForecastErrorScenarios.add(errorScenario);
     }
-  }
-
-  private Connection getDbConnection ()
-  {
-    Connection conn = null;
-    final String dbURL = getDbURL();
-    try {
-      conn = DriverManager.getConnection(dbURL, dbUserName, dbUserPassword);
-    }
-    catch (final SQLException e) {
-      log.error("getCobbection: unable to connect to database", e);
-    }
-
-    return conn;
-  }
-
-  private String getDbURL ()
-  {
-    String url = null;
-    url = "jdbc:" + this.dbms + "://" + this.dbHostName + ":" + this.port + "/";
-    return url;
   }
 
   /**
@@ -198,21 +86,22 @@ public class ForecastScenarios
    */
   public void calcWindSpeedForecastScenarios ()
   {
-    windSpeedForecastScenarios.clear();
-    final List<Double> windSpeedForecastValues =
-      windfarmGenco.getWindForecast().getWindSpeeds();
-    final List<Double> windSpeeds = new ArrayList<Double>();
-    for (final Scenario errorScenario: windSpeedForecastErrorScenarios) {
-      final double probability = errorScenario.getProbability();
-      final List<Double> errorValues = errorScenario.getValues();
-      for (int i = 0; i < errorValues.size(); i++) {
-        final double errval = errorValues.get(i);
-        final double windforecast = windSpeedForecastValues.get(i);
-        final double windSpeed = windforecast + errval;
-        windSpeeds.add(windSpeed);
-      }
-      windSpeedForecastScenarios.add(new Scenario(probability, windSpeeds));
-    } // for each error scenario
+//    windSpeedForecastScenarios.clear();
+//    final List<Double> windSpeedForecastValues =
+//      windfarmGenco.getWindForecast().getWindSpeeds();
+//    final List<ScenarioValue> windSpeeds = new ArrayList<ScenarioValue>();
+//    for (final Scenario errorScenario: windSpeedForecastErrorScenarios) {
+//      final double probability = errorScenario.getProbability();
+//      final List<ScenarioValue> errorValues = errorScenario.getValues();
+//      for (int i = 0; i < errorValues.size(); i++) {
+//        final int    leadHour = errorValues.get(i).getLeadHour();
+//        final double errval = errorValues.get(i).getValue();
+//        final double windforecast = windSpeedForecastValues.get(i);
+//        final double windSpeed = windforecast + errval;
+//        windSpeeds.add(new ScenarioValue(leadHour, errval));
+//      }
+//      //windSpeedForecastScenarios.
+//    } // for each error scenario
   } // calcWindSpeedForecastScenarios()
 
   /**
@@ -229,7 +118,7 @@ public class ForecastScenarios
     for (final Scenario windSpForecastScenario: windSpeedForecastScenarios) {
       final double probability = windSpForecastScenario.getProbability();
       powerOutputs.clear();
-      final List<Double> windSpeeds = windSpForecastScenario.getValues();
+      final List<Double> windSpeeds = null; //TODO: windSpForecastScenario.getValues();
       for (int i = 0; i < windSpeeds.size(); i++) {
         final double airpressure = airPressures.get(i);
         final double windspeed = windSpeeds.get(i);
@@ -240,7 +129,7 @@ public class ForecastScenarios
           windfarmGenco.getEstimatedPowerOutput(windspeed, airdensity);
         powerOutputs.add(powerout);
       }
-      windFarmPowerOutputScenarios.add(new Scenario(probability, powerOutputs));
+      //TODO: windFarmPowerOutputScenarios.add(new Scenario(probability, powerOutputs));
     } // for each wind speed scenario
   }
 

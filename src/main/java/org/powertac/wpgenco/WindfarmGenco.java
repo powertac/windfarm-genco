@@ -30,7 +30,6 @@ import org.powertac.common.config.ConfigurableValue;
 import org.powertac.common.interfaces.BrokerProxy;
 import org.powertac.common.state.Domain;
 import org.powertac.common.state.StateChange;
-import org.powertac.wpgenco.ForecastScenarios.Scenario;
 
 /**
  * Represents a producer of power in the transmission domain. Individual models
