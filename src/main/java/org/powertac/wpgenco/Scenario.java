@@ -16,7 +16,9 @@
 
 package org.powertac.wpgenco;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -44,12 +46,12 @@ public class Scenario implements Comparable<Scenario>
     private int hour = 0;
     @XStreamAlias("error")
     @XStreamAsAttribute
-    private double error = 0;
+    private double value = 0;
 
-    public ScenarioValue (int hr, double err)
+    public ScenarioValue (int hr, double val)
     {
       this.hour = hr;
-      this.error = err;
+      this.value = val;
     }
 
     public int getHour ()
@@ -57,9 +59,9 @@ public class Scenario implements Comparable<Scenario>
       return this.hour;
     }
 
-    public double getError ()
+    public double getValue ()
     {
-      return this.error;
+      return this.value;
     }
 
     @Override
@@ -85,6 +87,8 @@ public class Scenario implements Comparable<Scenario>
   private double probability = 0.0;
   @XStreamImplicit
   private SortedSet<ScenarioValue> values = new TreeSet<ScenarioValue>();
+   // a list representation is needed for performance reason
+  private List<ScenarioValue> valueList = new ArrayList<ScenarioValue>();
 
   public Scenario (final int number, final double prob)
   {
@@ -112,6 +116,16 @@ public class Scenario implements Comparable<Scenario>
     if ((sv != null) && (sv.getHour() > 0)) {
       values.add(sv);
     }
+  }
+  
+  public void createValueList() {
+    if (!values.isEmpty()) {
+      valueList.addAll(values);
+    }
+  }
+  
+  public List<ScenarioValue> getValueList() {
+    return Collections.unmodifiableList(valueList);
   }
 
   @Override

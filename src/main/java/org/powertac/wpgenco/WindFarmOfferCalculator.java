@@ -187,7 +187,7 @@ public class WindFarmOfferCalculator
     double negativeImbalance = 0;
     double positiveImbalance = 0;
     for (Scenario powerScenario: windfarmOutputScenarios) {
-      double pi = powerScenario.getValues().get(tiIndex);
+      double pi = powerScenario.getValueList().get(tiIndex).getValue(); //power for ith scenario
       double prob = powerScenario.getProbability();
       if (pi > pbid) { // negative imbalance
         negativeImbalance += (pi - pbid) * prob;

@@ -15,20 +15,16 @@
  */
 package org.powertac.wpgenco;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import org.apache.log4j.Logger;
+import java.util.Set;
+
+//import org.apache.log4j.Logger;
 import org.powertac.common.config.ConfigurableInstance;
 import org.powertac.common.config.ConfigurableValue;
 import org.powertac.common.state.Domain;
+import org.powertac.wpgenco.Scenario.ScenarioValue;
 
 /**
  * This class represents forecast scenarios for wind speed forecast errors,
@@ -42,7 +38,7 @@ import org.powertac.common.state.Domain;
 public class ForecastScenarios
 {
 
-  private static Logger log = Logger.getLogger(ForecastScenarios.class);
+  //private static Logger log = Logger.getLogger(ForecastScenarios.class);
 
   /*
    * Condifured attributes
@@ -52,7 +48,7 @@ public class ForecastScenarios
 
   // member variables
   private final WindfarmGenco windfarmGenco;
-  private final WindForecastErrorScenarios windspeedErrorScenarios = null;
+  private WindForecastErrorScenarios windspeedErrorScenarios = null;
   private final List<Scenario> windSpeedForecastScenarios =
     new ArrayList<Scenario>();
   private final List<Scenario> windFarmPowerOutputScenarios =
@@ -61,47 +57,33 @@ public class ForecastScenarios
   public ForecastScenarios (final WindfarmGenco ref)
   {
     this.windfarmGenco = ref;
+    windspeedErrorScenarios = WindForecastErrorScenarios.getWindForecastErrorScenarios();
   }
 
-
-  private void
-    populateWindSpeedErrorScenarios (final Map<Integer, Scenario> scenarioMap)
-  {
-    if (scenarioMap.size() > 0) {
-      // TODO: this.windSpeedForecastErrorScenarios.clear();
-    }
-    else {
-      return;
-    }
-
-    final List<Scenario> scenarioList =
-      new ArrayList<Scenario>(scenarioMap.values());
-    for (final Scenario errorScenario: scenarioList) {
-      // TODO: windSpeedForecastErrorScenarios.add(errorScenario);
-    }
-  }
 
   /**
    * calculate wind speed forecast scenarios
    */
   public void calcWindSpeedForecastScenarios ()
   {
-//    windSpeedForecastScenarios.clear();
-//    final List<Double> windSpeedForecastValues =
-//      windfarmGenco.getWindForecast().getWindSpeeds();
-//    final List<ScenarioValue> windSpeeds = new ArrayList<ScenarioValue>();
-//    for (final Scenario errorScenario: windSpeedForecastErrorScenarios) {
-//      final double probability = errorScenario.getProbability();
-//      final List<ScenarioValue> errorValues = errorScenario.getValues();
-//      for (int i = 0; i < errorValues.size(); i++) {
-//        final int    leadHour = errorValues.get(i).getLeadHour();
-//        final double errval = errorValues.get(i).getValue();
-//        final double windforecast = windSpeedForecastValues.get(i);
-//        final double windSpeed = windforecast + errval;
-//        windSpeeds.add(new ScenarioValue(leadHour, errval));
-//      }
-//      //windSpeedForecastScenarios.
-//    } // for each error scenario
+    windSpeedForecastScenarios.clear();
+    final List<Double> windSpeedForecastValues =
+      windfarmGenco.getWindForecast().getWindSpeeds();
+    for (final Scenario errorScenario : windspeedErrorScenarios.getScenarios()) {
+      int scenarioNumber = errorScenario.getScenarioNumber();
+      final double probability = errorScenario.getProbability();
+      Scenario windSpeedScenario = new Scenario(scenarioNumber, probability);
+      final Set<ScenarioValue> errorValues = errorScenario.getValues();
+      for (ScenarioValue ev : errorValues) {
+        final int    leadHour = ev.getHour();
+        final double errval = ev.getValue();
+        final double windforecast = windSpeedForecastValues.get(leadHour - 1);
+        final double windSpeed = windforecast + errval;
+        windSpeedScenario.addValue(new ScenarioValue(leadHour, windSpeed));       
+      }
+      windSpeedScenario.createValueList();
+      windSpeedForecastScenarios.add(windSpeedScenario);
+    } // for each error scenario
   } // calcWindSpeedForecastScenarios()
 
   /**
@@ -117,19 +99,21 @@ public class ForecastScenarios
       windfarmGenco.getWindForecast().getTemperature();
     for (final Scenario windSpForecastScenario: windSpeedForecastScenarios) {
       final double probability = windSpForecastScenario.getProbability();
+      final int scenarioNumber = windSpForecastScenario.getScenarioNumber();
       powerOutputs.clear();
-      final List<Double> windSpeeds = null; //TODO: windSpForecastScenario.getValues();
-      for (int i = 0; i < windSpeeds.size(); i++) {
-        final double airpressure = airPressures.get(i);
-        final double windspeed = windSpeeds.get(i);
-        final double temperature = temperatures.get(i);
-        final double airdensity =
-          WindfarmGenco.getDryAirDensity(airpressure, temperature);
-        final double powerout =
-          windfarmGenco.getEstimatedPowerOutput(windspeed, airdensity);
-        powerOutputs.add(powerout);
-      }
-      //TODO: windFarmPowerOutputScenarios.add(new Scenario(probability, powerOutputs));
+      final Set<ScenarioValue> windSpeeds = windSpForecastScenario.getValues();
+      Scenario powerOutputScenario = new Scenario(scenarioNumber, probability);
+      for (ScenarioValue wsp : windSpeeds) {
+        int hour = wsp.getHour();
+        double windSpeed = wsp.getValue();
+        double airpressure = airPressures.get(hour - 1);
+        double temperature = temperatures.get(hour - 1);
+        double airdensity = WindfarmGenco.getDryAirDensity(airpressure, temperature);
+        double powerout = windfarmGenco.getEstimatedPowerOutput(windSpeed, airdensity);
+        powerOutputScenario.addValue(new ScenarioValue(hour, powerout));
+      } //for each wind speed scenario value
+      powerOutputScenario.createValueList();
+      windFarmPowerOutputScenarios.add(powerOutputScenario);
     } // for each wind speed scenario
   }
 
